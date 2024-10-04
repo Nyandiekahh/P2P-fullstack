@@ -1,0 +1,376 @@
+/* Dashboard.css */
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  .dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .dashboard-header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .dashboard-header h1 {
+    margin: 0;
+    font-size: 28px;
+    text-align: center;
+  }
+  
+  .dashboard-content {
+    background-color: white;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+  }
+  
+  .dashboard-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  
+  .card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin: 10px;
+    flex: 1;
+    min-width: 300px;
+  }
+  
+  .card h2 {
+    color: #2a5298;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+    margin-top: 0;
+  }
+  
+  /* User Profile */
+  .user-profile .user-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .user-profile .user-icon {
+    color: #2a5298;
+    margin-right: 20px;
+  }
+  
+  .user-profile h3 {
+    margin: 0;
+    color: #333;
+  }
+  
+  .user-profile p {
+    margin: 5px 0;
+    color: #666;
+  }
+  
+  /* Quick Stats */
+  .quick-stats .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+  
+  .stat-item {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 15px;
+    text-align: center;
+  }
+  
+  .stat-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2a5298;
+    margin: 0;
+  }
+  
+  /* Notifications */
+  .notifications .alert {
+    display: flex;
+    align-items: center;
+    background-color: #fff3cd;
+    border-left: 4px solid #ffc107;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+  }
+  
+  .notifications .alert-icon {
+    color: #ffc107;
+    margin-right: 10px;
+  }
+  
+  /* Charts */
+  .loan-activity, .portfolio-distribution, .risk-assessment {
+    height: 350px;
+  }
+  
+  /* Recent Transactions */
+  .recent-transactions ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .recent-transactions li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .recent-transactions .amount {
+    font-weight: bold;
+  }
+  
+  .recent-transactions .positive {
+    color: #28a745;
+  }
+  
+  .recent-transactions .negative {
+    color: #dc3545;
+  }
+  
+  /* Currency Converter */
+  .currency-converter .converter-content {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .converter-input, .converter-select, .converter-button {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .converter-selects {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .converter-select {
+    width: 48%;
+  }
+  
+  .converter-button {
+    background-color: #2a5298;
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .converter-icon {
+    margin-right: 5px;
+  }
+  
+  .converter-result {
+    margin-top: 15px;
+    font-weight: bold;
+    text-align: center;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .dashboard-row {
+      flex-direction: column;
+    }
+  
+    .card {
+      min-width: auto;
+    }
+  
+    .quick-stats .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .converter-selects {
+      flex-direction: column;
+    }
+  
+    .converter-select {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  }
+  
+  /* Card hover effect */
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+  
+  /* Button styles */
+  button {
+    transition: background-color 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #1e3c72;
+  }
+  
+  /* Input focus styles */
+  input:focus, select:focus {
+    outline: none;
+    border-color: #2a5298;
+    box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.2);
+  }
+  
+  /* Chart customization */
+  .recharts-default-tooltip {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Additional classes for visual enhancements */
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .card-icon {
+    font-size: 24px;
+    color: #2a5298;
+  }
+  
+  .progress-bar {
+    height: 8px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .progress-bar-fill {
+    height: 100%;
+    background-color: #2a5298;
+    transition: width 0.5s ease;
+  }
+  
+  /* Animation for notifications */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .notifications .alert {
+    animation: fadeIn 0.5s ease;
+  }
+  
+  /* Gradient backgrounds for variety */
+  .loan-activity {
+    background: linear-gradient(to bottom right, #ffffff, #f0f4f8);
+  }
+  
+  .portfolio-distribution {
+    background: linear-gradient(to bottom right, #ffffff, #e6f2ff);
+  }
+  
+  .risk-assessment {
+    background: linear-gradient(to bottom right, #ffffff, #fff0e6);
+  }
+  
+  /* Typography enhancements */
+  h1, h2, h3 {
+    font-weight: 600;
+  }
+  
+  .card p {
+    color: #555;
+  }
+  
+  /* Footer */
+  .dashboard-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #1e3c72;
+    color: white;
+    border-radius: 0 0 10px 10px;
+  }
+  
+  /* Accessibility improvements */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  
+  /* Print styles */
+  @media print {
+    .dashboard {
+      max-width: none;
+      margin: 0;
+      padding: 0;
+    }
+  
+    .card {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  
+    .dashboard-header, .dashboard-footer {
+      background: none;
+      color: black;
+    }
+  
+    .converter-button, .notifications {
+      display: none;
+    }
+  }
+  
