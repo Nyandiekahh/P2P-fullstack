@@ -1,0 +1,16 @@
+.profile-container {
+    width: 300px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .profile-container h1 {
+    text-align: center;
+  }
+  
+  .profile-container p {
+    text-align: center;
+  }
+  
