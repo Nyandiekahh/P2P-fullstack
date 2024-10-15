@@ -1,17 +1,37 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, LogIn } from 'lucide-react';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
 import './Login.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const Register = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    country: '',
+    phone_number: '',
+    role: 'borrower',
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePhoneChange = (value, country) => {
+    setFormData({
+      ...formData,
+      phone_number: value,
+      country: country.countryCode.toUpperCase()
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,21 +39,20 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(formData),
       });
       
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.access_token);
-        navigate('/dashboard');
+        navigate('/login');
       } else {
-        setError(data.message || 'Login failed');
+        setError(data.message || 'Registration failed');
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
@@ -46,17 +65,31 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <form onSubmit={handleSubmit} className="login-form">
-          <h2 className="form-title">Welcome Back!</h2>
-          <p className="form-subtitle">Please enter your credentials to login.</p>
+          <h2 className="form-title">Create Account</h2>
+          <p className="form-subtitle">Please fill in your details to register.</p>
           
           {error && <p className="error-message">{error}</p>}
+          
+          <div className="input-group">
+            <User className="input-icon" />
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="form-input"
+              placeholder="Full Name"
+            />
+          </div>
           
           <div className="input-group">
             <Mail className="input-icon" />
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
               required
               className="form-input"
               placeholder="Email"
@@ -64,11 +97,24 @@ const Login = () => {
           </div>
           
           <div className="input-group">
+            <PhoneInput
+              country={'us'}
+              value={formData.phone_number}
+              onChange={handlePhoneChange}
+              inputProps={{
+                required: true,
+                className: 'form-input'
+              }}
+            />
+          </div>
+          
+          <div className="input-group">
             <Lock className="input-icon" />
             <input
               type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
               required
               className="form-input"
               placeholder="Password"
@@ -83,16 +129,16 @@ const Login = () => {
           </div>
           
           <button type="submit" className="form-button" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : (
+            {isLoading ? 'Registering...' : (
               <>
                 <LogIn size={20} />
-                Login
+                Register
               </>
             )}
           </button>
           
           <p className="register-link">
-            New here? <Link to="/register">Register now</Link>
+            Already have an account? <Link to="/login">Login here</Link>
           </p>
         </form>
       </div>
@@ -100,4 +146,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
