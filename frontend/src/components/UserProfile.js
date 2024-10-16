@@ -18,12 +18,13 @@ const UserProfile = ({ onUserDataFetched }) => {
 
         const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'x-auth-token': token  // Changed from 'Authorization': `Bearer ${token}`
           }
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch user data');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to fetch user data');
         }
 
         const userData = await response.json();
@@ -32,6 +33,7 @@ const UserProfile = ({ onUserDataFetched }) => {
           onUserDataFetched(userData.phone_number);
         }
       } catch (err) {
+        console.error('Error fetching user data:', err);
         setError(err.message);
       } finally {
         setLoading(false);

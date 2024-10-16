@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const axios = require('axios');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.get('/api/test', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Function to get access token
 const getAccessToken = async () => {
@@ -72,7 +74,7 @@ app.post('/api/initiate-payment', async (req, res) => {
       PartyB: process.env.SHORTCODE,
       PhoneNumber: phoneNumber,
       CallBackURL: 'https://example.com/callback', // This is a placeholder
-      AccountReference: 'M-PESA Demo',
+      AccountReference: 'Tech Titans',
       TransactionDesc: 'Payment for goods',
     }, {
       headers: {
