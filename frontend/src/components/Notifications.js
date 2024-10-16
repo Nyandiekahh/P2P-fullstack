@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { AlertCircle, CreditCard } from 'lucide-react';
 import PaymentForm from './PaymentForm';
+import Modal from './Modal';
 
 const NotificationCard = styled.div`
   padding: 20px;
@@ -57,10 +58,14 @@ const MpesaIcon = styled(CreditCard)`
 `;
 
 const Notifications = () => {
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleMPesaInvestment = () => {
-    setShowPaymentForm(true);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -84,7 +89,9 @@ const Notifications = () => {
         </MpesaButton>
       </MpesaInvestment>
 
-      {showPaymentForm && <PaymentForm />}
+      <Modal isOpen={isModalOpen} onClose={closeModal}>
+        <PaymentForm />
+      </Modal>
     </NotificationCard>
   );
 };
