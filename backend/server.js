@@ -3,9 +3,11 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const axios = require('axios');
+const path = require('path');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 dotenv.config();
 
@@ -21,6 +23,9 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Test route
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Server is working correctly!' });
@@ -29,6 +34,7 @@ app.get('/api/test', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/auth', uploadRoutes);
 
 // Function to get access token
 const getAccessToken = async () => {
