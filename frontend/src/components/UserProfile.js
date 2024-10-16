@@ -3,7 +3,7 @@ import { UserCircle, Star } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
-const UserProfile = () => {
+const UserProfile = ({ onUserDataFetched }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,6 +28,9 @@ const UserProfile = () => {
 
         const userData = await response.json();
         setUser(userData);
+        if (onUserDataFetched) {
+          onUserDataFetched(userData.phone_number);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -36,7 +39,7 @@ const UserProfile = () => {
     };
 
     fetchUserData();
-  }, []);
+  }, [onUserDataFetched]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;

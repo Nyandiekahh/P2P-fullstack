@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
 
@@ -49,12 +49,34 @@ const Message = styled.p`
   color: ${props => props.isError ? '#c62828' : '#2e7d32'};
 `;
 
-function PaymentForm() {
+const PhoneOption = styled.button`
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #e0e0e0;
+  }
+`;
+
+function PaymentForm({ userPhoneNumber }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    if (userPhoneNumber) {
+      setPhoneNumber(userPhoneNumber);
+    }
+  }, [userPhoneNumber]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -79,12 +101,21 @@ function PaymentForm() {
     setLoading(false);
   };
 
+  const handleUseUserPhone = () => {
+    setPhoneNumber(userPhoneNumber);
+  };
+
   return (
     <FormContainer>
       <Title>Make a Payment</Title>
       <form onSubmit={handleSubmit}>
         <FormGroup>
           <Label htmlFor="phoneNumber">Phone Number:</Label>
+          {userPhoneNumber && userPhoneNumber !== phoneNumber && (
+            <PhoneOption type="button" onClick={handleUseUserPhone}>
+              Use my number: {userPhoneNumber}
+            </PhoneOption>
+          )}
           <Input
             type="text"
             id="phoneNumber"

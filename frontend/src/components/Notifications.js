@@ -57,7 +57,7 @@ const MpesaIcon = styled(CreditCard)`
   margin-right: 10px;
 `;
 
-const Notifications = () => {
+const Notifications = ({ userPhoneNumber }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleMPesaInvestment = () => {
@@ -90,7 +90,7 @@ const Notifications = () => {
       </MpesaInvestment>
 
       <Modal isOpen={isModalOpen} onClose={closeModal}>
-        <PaymentForm />
+        <PaymentForm userPhoneNumber={userPhoneNumber} />
       </Modal>
     </NotificationCard>
   );

@@ -1,5 +1,4 @@
-// src/components/Dashboard.js
-import React from 'react';
+import React, { useState } from 'react';
 import UserProfile from './UserProfile';
 import QuickStats from './QuickStats';
 import Notifications from './Notifications';
@@ -11,6 +10,12 @@ import CurrencyConverter from './CurrencyConverter';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const [userPhoneNumber, setUserPhoneNumber] = useState('');
+
+  const handleUserDataFetched = (phoneNumber) => {
+    setUserPhoneNumber(phoneNumber);
+  };
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -18,9 +23,9 @@ const Dashboard = () => {
       </header>
       <div className="dashboard-content">
         <div className="dashboard-row">
-          <UserProfile />
+          <UserProfile onUserDataFetched={handleUserDataFetched} />
           <QuickStats />
-          <Notifications />
+          <Notifications userPhoneNumber={userPhoneNumber} />
         </div>
         <div className="dashboard-row">
           <LoanActivity />
