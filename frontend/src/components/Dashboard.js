@@ -5,16 +5,16 @@ import {
   RefreshCw,
   HelpCircle
 } from 'lucide-react';
+import ClassicClock from './ClassicClock';  // Import the new component
 import UserProfile from './UserProfile';
 import QuickStats from './QuickStats';
 import Notifications from './Notifications';
 import LoanActivity from './LoanActivity';
 import LoanListings from './LoanListings';
-import InvestmentPortfolio from './InvestmentPortfolio';
+import VideoTutorial from './VideoTutorial';
 import TransactionHistory from './TransactionHistory';
 import CurrencyConverter from './CurrencyConverter';
 import EducationalResources from './EducationalResources';
-
 
 const DashboardContainer = styled(motion.div)`
   display: grid;
@@ -82,7 +82,7 @@ const LoanActivitySection = styled(Section)`
   grid-column: span 6;
 `;
 
-const InvestmentPortfolioSection = styled(Section)`
+const VideoTutorialSection = styled(Section)`
   grid-column: span 6;
 `;
 
@@ -120,6 +120,22 @@ const HelpButton = styled(motion.button)`
   z-index: 1000;
 `;
 
+const HeaderContent = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+`;
+
+const TitleAndClock = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const ClockWrapper = styled.div`
+  margin-left: 30px;
+`;
+
 const Dashboard = () => {
   const [userPhoneNumber, setUserPhoneNumber] = useState('');
   const [showHelp, setShowHelp] = useState(false);
@@ -129,7 +145,6 @@ const Dashboard = () => {
   };
 
   const handleRefresh = () => {
-    // Implement refresh logic here
     console.log('Refreshing dashboard data...');
   };
 
@@ -144,15 +159,22 @@ const Dashboard = () => {
       transition={{ duration: 0.5 }}
     >
       <Header>
-        <Title>P2P Lending Dashboard</Title>
-        <RefreshButton
-          onClick={handleRefresh}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <RefreshCw size={18} style={{ marginRight: '8px' }} />
-          Refresh Data
-        </RefreshButton>
+        <HeaderContent>
+          <TitleAndClock>
+            <Title>P2P Lending Dashboard</Title>
+            <ClockWrapper>
+              <ClassicClock />
+            </ClockWrapper>
+          </TitleAndClock>
+          <RefreshButton
+            onClick={handleRefresh}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <RefreshCw size={18} style={{ marginRight: '8px' }} />
+            Refresh Data
+          </RefreshButton>
+        </HeaderContent>
       </Header>
 
       <UserProfileSection
@@ -187,13 +209,13 @@ const Dashboard = () => {
         <LoanActivity />
       </LoanActivitySection>
 
-      <InvestmentPortfolioSection
+      <VideoTutorialSection
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <InvestmentPortfolio />
-      </InvestmentPortfolioSection>
+        <VideoTutorial videoSrc="/p2p.mp4" />
+      </VideoTutorialSection>
 
       <LoanListingsSection
         initial={{ y: 20, opacity: 0 }}
