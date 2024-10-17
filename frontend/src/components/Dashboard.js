@@ -15,6 +15,7 @@ import VideoTutorial from './VideoTutorial';
 import TransactionHistory from './TransactionHistory';
 import CurrencyConverter from './CurrencyConverter';
 import EducationalResources from './EducationalResources';
+import TutorialComponent from './TutorialComponent';
 
 const DashboardContainer = styled(motion.div)`
   display: grid;
@@ -160,6 +161,7 @@ const Dashboard = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
+      <TutorialComponent />
       <Header>
         <HeaderContent>
           <LogoWrapper>
@@ -179,8 +181,8 @@ const Dashboard = () => {
         </HeaderContent>
       </Header>
 
-      {/* Rest of the dashboard sections remain unchanged */}
       <UserProfileSection
+        className="user-profile"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1 }}
@@ -189,6 +191,7 @@ const Dashboard = () => {
       </UserProfileSection>
 
       <QuickStatsSection
+        className="quick-stats"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -197,6 +200,7 @@ const Dashboard = () => {
       </QuickStatsSection>
 
       <NotificationsSection
+        className="notifications"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -205,6 +209,7 @@ const Dashboard = () => {
       </NotificationsSection>
 
       <LoanActivitySection
+        className="loan-activity"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
@@ -213,6 +218,7 @@ const Dashboard = () => {
       </LoanActivitySection>
 
       <VideoTutorialSection
+        className="video-tutorial"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
@@ -221,6 +227,7 @@ const Dashboard = () => {
       </VideoTutorialSection>
 
       <LoanListingsSection
+        className="loan-listings"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.6 }}
@@ -229,6 +236,7 @@ const Dashboard = () => {
       </LoanListingsSection>
 
       <TransactionHistorySection
+        className="transaction-history"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.7 }}
@@ -237,6 +245,7 @@ const Dashboard = () => {
       </TransactionHistorySection>
 
       <CurrencyConverterSection
+        className="currency-converter"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.8 }}
@@ -245,6 +254,7 @@ const Dashboard = () => {
       </CurrencyConverterSection>
 
       <EducationalResourcesSection
+        className="educational-resources"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.9 }}
