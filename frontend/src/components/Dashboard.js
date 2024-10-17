@@ -5,7 +5,7 @@ import {
   RefreshCw,
   HelpCircle
 } from 'lucide-react';
-import ClassicClock from './ClassicClock';  // Import the new component
+import ClassicClock from './ClassicClock';
 import UserProfile from './UserProfile';
 import QuickStats from './QuickStats';
 import Notifications from './Notifications';
@@ -31,15 +31,19 @@ const Header = styled.header`
   justify-content: space-between;
   align-items: center;
   background-color: #ffffff;
-  padding: 20px;
+  padding: 15px 20px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 `;
 
-const Title = styled.h1`
-  font-size: 24px;
-  color: #333;
-  margin: 0;
+const LogoWrapper = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const Logo = styled.img`
+  height: 40px;
+  width: auto;
 `;
 
 const RefreshButton = styled(motion.button)`
@@ -48,10 +52,10 @@ const RefreshButton = styled(motion.button)`
   background-color: #4CAF50;
   color: white;
   border: none;
-  padding: 10px 15px;
+  padding: 8px 12px;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   transition: background-color 0.3s ease;
 
   &:hover {
@@ -127,13 +131,11 @@ const HeaderContent = styled.div`
   width: 100%;
 `;
 
-const TitleAndClock = styled.div`
-  display: flex;
-  align-items: center;
-`;
-
 const ClockWrapper = styled.div`
-  margin-left: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
 `;
 
 const Dashboard = () => {
@@ -160,23 +162,24 @@ const Dashboard = () => {
     >
       <Header>
         <HeaderContent>
-          <TitleAndClock>
-            <Title>P2P Lending Dashboard</Title>
-            <ClockWrapper>
-              <ClassicClock />
-            </ClockWrapper>
-          </TitleAndClock>
+          <LogoWrapper>
+            <Logo src="/jengafunds-logo.svg" alt="JengaFunds Logo" />
+          </LogoWrapper>
+          <ClockWrapper>
+            <ClassicClock />
+          </ClockWrapper>
           <RefreshButton
             onClick={handleRefresh}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <RefreshCw size={18} style={{ marginRight: '8px' }} />
-            Refresh Data
+            <RefreshCw size={16} style={{ marginRight: '6px' }} />
+            Refresh
           </RefreshButton>
         </HeaderContent>
       </Header>
 
+      {/* Rest of the dashboard sections remain unchanged */}
       <UserProfileSection
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
