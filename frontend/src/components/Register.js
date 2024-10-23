@@ -1,23 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, LogIn } from 'lucide-react';
-import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/style.css';
 import './Login.css';
-
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: '',
-    country: '',
-    phone_number: '',
-    role: 'borrower',
+    first_name: '',
+    last_name: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -25,21 +20,14 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlePhoneChange = (value, country) => {
-    setFormData({
-      ...formData,
-      phone_number: value,
-      country: country.countryCode.toUpperCase()
-    });
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const response = await fetch('http://localhost:8000/api/auth/register/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,9 +38,10 @@ const Register = () => {
       const data = await response.json();
 
       if (response.ok) {
-        navigate('/login');
+        setSuccess('Registration successful! Please check your email to verify your account.');
+        setTimeout(() => navigate('/login'), 3000);
       } else {
-        setError(data.message || 'Registration failed');
+        setError(data.error || 'Registration failed');
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
@@ -69,17 +58,31 @@ const Register = () => {
           <p className="form-subtitle">Please fill in your details to register.</p>
           
           {error && <p className="error-message">{error}</p>}
+          {success && <p className="success-message">{success}</p>}
           
           <div className="input-group">
             <User className="input-icon" />
             <input
               type="text"
-              name="name"
-              value={formData.name}
+              name="first_name"
+              value={formData.first_name}
               onChange={handleChange}
               required
               className="form-input"
-              placeholder="Full Name"
+              placeholder="First Name"
+            />
+          </div>
+
+          <div className="input-group">
+            <User className="input-icon" />
+            <input
+              type="text"
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleChange}
+              required
+              className="form-input"
+              placeholder="Last Name"
             />
           </div>
           
@@ -93,18 +96,6 @@ const Register = () => {
               required
               className="form-input"
               placeholder="Email"
-            />
-          </div>
-          
-          <div className="input-group">
-            <PhoneInput
-              country={'us'}
-              value={formData.phone_number}
-              onChange={handlePhoneChange}
-              inputProps={{
-                required: true,
-                className: 'form-input'
-              }}
             />
           </div>
           
