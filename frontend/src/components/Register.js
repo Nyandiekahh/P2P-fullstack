@@ -7,10 +7,14 @@ const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    confirm_password: '',
     first_name: '',
     last_name: '',
   });
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState({
+    password: false,
+    confirm: false
+  });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -26,19 +30,31 @@ const Register = () => {
     setSuccess('');
     setIsLoading(true);
 
+    // Validate passwords match
+    if (formData.password !== formData.confirm_password) {
+      setError('Passwords do not match');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:8000/api/auth/register/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+        }),
       });
       
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('Registration successful! Please check your email to verify your account.');
+        setSuccess(data.message);
         setTimeout(() => navigate('/login'), 3000);
       } else {
         setError(data.error || 'Registration failed');
@@ -102,7 +118,7 @@ const Register = () => {
           <div className="input-group">
             <Lock className="input-icon" />
             <input
-              type={showPassword ? "text" : "password"}
+              type={showPassword.password ? "text" : "password"}
               name="password"
               value={formData.password}
               onChange={handleChange}
@@ -113,9 +129,35 @@ const Register = () => {
             <button
               type="button"
               className="password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={() => setShowPassword({
+                ...showPassword,
+                password: !showPassword.password
+              })}
             >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              {showPassword.password ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+          
+          <div className="input-group">
+            <Lock className="input-icon" />
+            <input
+              type={showPassword.confirm ? "text" : "password"}
+              name="confirm_password"
+              value={formData.confirm_password}
+              onChange={handleChange}
+              required
+              className="form-input"
+              placeholder="Confirm Password"
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword({
+                ...showPassword,
+                confirm: !showPassword.confirm
+              })}
+            >
+              {showPassword.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
           

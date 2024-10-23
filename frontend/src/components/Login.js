@@ -11,6 +11,7 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -22,6 +23,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setIsLoading(true);
 
     try {
@@ -36,10 +38,22 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        login(data.user, data.tokens);
-        navigate('/dashboard');
+        // Store the token in localStorage
+        localStorage.setItem('token', data.tokens.access);
+        
+        // If using the context
+        if (login) {
+          login(data.user, data.tokens);
+        }
+
+        setSuccess('Login successful! Redirecting...');
+        
+        // Navigate to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       } else {
-        setError(data.error || 'Login failed');
+        setError(data.error || 'Invalid credentials');
       }
     } catch (error) {
       setError('An error occurred. Please try again.');
@@ -52,10 +66,11 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <form onSubmit={handleSubmit} className="login-form">
-          <h2 className="form-title">Welcome Back!</h2>
+          <h2 className="form-title">Welcome Back to JengaFunds!</h2>
           <p className="form-subtitle">Please enter your credentials to login.</p>
           
           {error && <p className="error-message">{error}</p>}
+          {success && <p className="success-message">{success}</p>}
           
           <div className="input-group">
             <Mail className="input-icon" />
@@ -88,6 +103,12 @@ const Login = () => {
             >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
+          </div>
+          
+          <div className="form-options">
+            <Link to="/forgot-password" className="forgot-password">
+              Forgot Password?
+            </Link>
           </div>
           
           <button type="submit" className="form-button" disabled={isLoading}>
