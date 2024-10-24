@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, User, Settings, LogOut, ChevronLeft, ChevronRight, DollarSign, Users } from 'lucide-react';
+import { Home, User, Settings, LogOut, ChevronLeft, ChevronRight, DollarSign, Users, Briefcase } from 'lucide-react';
 
 const SidebarContainer = styled(motion.div)`
   position: fixed;
@@ -108,8 +108,8 @@ const Sidebar = () => {
   };
 
   const handleLogout = () => {
-    // Implement logout logic here
     console.log('Logging out...');
+    // Add actual logout functionality
   };
 
   return (
@@ -127,7 +127,7 @@ const Sidebar = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
-          {/* P2P Lend */}
+          {/* Your Logo */}
         </motion.span>
       </Logo>
       <NavItems>
@@ -164,8 +164,8 @@ const Sidebar = () => {
           </NavLink>
         </NavItem>
         <NavItem>
-          <NavLink to="/investments" className={location.pathname === '/investments' ? 'active' : ''}>
-            <Icon><DollarSign size={20} /></Icon>
+          <NavLink to="/loan-marketplace" className={location.pathname === '/loan-marketplace' ? 'active' : ''}>
+            <Icon><Briefcase size={20} /></Icon>
             <AnimatePresence>
               {isOpen && (
                 <motion.span
@@ -173,23 +173,7 @@ const Sidebar = () => {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  Investments
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </NavLink>
-        </NavItem>
-        <NavItem>
-          <NavLink to="/admin" className={location.pathname === '/admin' ? 'active' : ''}>
-            <Icon><Users size={20} /></Icon>
-            <AnimatePresence>
-              {isOpen && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  Admin
+                  Loan Marketplace
                 </motion.span>
               )}
             </AnimatePresence>

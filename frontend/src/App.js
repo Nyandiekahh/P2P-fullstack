@@ -7,6 +7,7 @@ import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import Profile from './components/Profile';
+import LoanMarketplace from './components/LoanMarketplace';  // Import the LoanMarketplace component
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import EmailVerification from './components/EmailVerification';
@@ -19,23 +20,21 @@ const AppContainer = styled.div`
 
 const MainContent = styled.main`
   flex-grow: 1;
-  margin-left: 60px;
+  margin-left: ${props => (props.isSidebarOpen ? '240px' : '60px')}; /* Adjust based on sidebar state */
   transition: margin-left 0.3s ease;
   padding: 20px;
-
-  @media (min-width: 768px) {
-    margin-left: 240px;
-  }
 `;
 
-const Layout = ({ children }) => (
+const Layout = ({ children, isSidebarOpen }) => (
   <AppContainer>
     <Sidebar />
-    <MainContent>{children}</MainContent>
+    <MainContent isSidebarOpen={isSidebarOpen}>{children}</MainContent>
   </AppContainer>
 );
 
 const App = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+
   return (
     <AuthProvider>
       <Router>
@@ -47,10 +46,25 @@ const App = () => {
           <Route path="/reset-password/:userId/:token" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<RequestPasswordReset />} />
           
+          {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/profile" element={<Layout><Profile /></Layout>} />
-            <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
+            <Route 
+              path="/dashboard" 
+              element={<Layout isSidebarOpen={isSidebarOpen}><Dashboard /></Layout>} 
+            />
+            <Route 
+              path="/profile" 
+              element={<Layout isSidebarOpen={isSidebarOpen}><Profile /></Layout>} 
+            />
+            <Route 
+              path="/admin" 
+              element={<Layout isSidebarOpen={isSidebarOpen}><AdminDashboard /></Layout>} 
+            />
+            {/* Loan Marketplace Page */}
+            <Route 
+              path="/loan-marketplace" 
+              element={<Layout isSidebarOpen={isSidebarOpen}><LoanMarketplace /></Layout>} 
+            />
           </Route>
           
           <Route path="*" element={<Navigate to="/login" />} />
