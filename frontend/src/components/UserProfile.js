@@ -2,9 +2,28 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { UserCircle, Star, TrendingUp, AlertCircle, Shield, Camera } from 'lucide-react';
+import { useAuth } from '../context/AuthContext'; // Add this import
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+// API Service
+const apiService = {
+    getProfile: async (accessToken) => {
+        try {
+            const response = await fetch('http://localhost:8000/api/auth/profile/', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+            if (!response.ok) throw new Error('Failed to fetch profile');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+            throw error;
+        }
+    }
+};
 
+// Styled Components (keeping your existing styles)
 const ProfileContainer = styled(motion.div)`
   background-color: #ffffff;
   border-radius: 10px;
@@ -142,45 +161,40 @@ const CreditScoreFill = styled.div`
   width: ${props => (props.score / 850) * 100}%;
 `;
 
+const WelcomeMessage = styled.h1`
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 1.8em;
+`;
+
 const UserProfile = ({ onUserDataFetched }) => {
-  const [user, setUser] = useState(null);
+  const { tokens } = useAuth(); // Use the auth context
+  const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-        headers: {
-          'x-auth-token': token
+    const fetchProfileData = async () => {
+      try {
+        if (tokens?.access) {
+          const data = await apiService.getProfile(tokens.access);
+          setProfileData(data);
+          if (onUserDataFetched) {
+            onUserDataFetched(data.phone_number);
+          }
         }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user data');
+      } catch (err) {
+        console.error('Error fetching profile data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const userData = await response.json();
-      setUser(userData);
-      if (onUserDataFetched) {
-        onUserDataFetched(userData.phone_number);
-      }
-    } catch (err) {
-      console.error('Error fetching user data:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchProfileData();
+  }, [tokens, onUserDataFetched]);
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
@@ -190,21 +204,23 @@ const UserProfile = ({ onUserDataFetched }) => {
     formData.append('profileImage', file);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/auth/upload-profile-image`, {
+      if (!tokens?.access) throw new Error('No access token found');
+      
+      const response = await fetch('http://localhost:8000/api/auth/upload-profile-image/', {
         method: 'POST',
         headers: {
-          'x-auth-token': token
+          'Authorization': `Bearer ${tokens.access}`
         },
         body: formData
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
+      if (!response.ok) throw new Error('Failed to upload image');
 
       const result = await response.json();
-      setUser(prevUser => ({ ...prevUser, profileImageUrl: result.imageUrl }));
+      setProfileData(prevData => ({
+        ...prevData,
+        profile_image: result.imageUrl
+      }));
     } catch (err) {
       console.error('Error uploading image:', err);
       setError(err.message);
@@ -213,7 +229,7 @@ const UserProfile = ({ onUserDataFetched }) => {
 
   if (loading) return <div>Loading profile...</div>;
   if (error) return <div>Error: {error}</div>;
-  if (!user) return <div>No user data available</div>;
+  if (!profileData) return <div>No profile data available</div>;
 
   return (
     <ProfileContainer
@@ -221,10 +237,14 @@ const UserProfile = ({ onUserDataFetched }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      <WelcomeMessage>
+        Welcome back, {profileData.first_name || 'User'}!
+      </WelcomeMessage>
+      
       <ProfileHeader>
         <ProfileImageContainer onClick={() => fileInputRef.current.click()}>
-          {user.profileImageUrl ? (
-            <ProfileImage src={`${API_BASE_URL}${user.profileImageUrl}`} alt="Profile" />
+          {profileData.profile_image ? (
+            <ProfileImage src={profileData.profile_image} alt="Profile" />
           ) : (
             <UserCircle size={120} color="#4CAF50" />
           )}
@@ -239,11 +259,13 @@ const UserProfile = ({ onUserDataFetched }) => {
           />
         </ProfileImageContainer>
         <ProfileInfo>
-          <Name>{user.name}</Name>
-          <MemberSince>Member since {new Date(user.dateJoined).getFullYear()}</MemberSince>
+          <Name>{`${profileData.first_name} ${profileData.last_name}`}</Name>
+          <MemberSince>
+            Member since {new Date(profileData.profile?.member_since || Date.now()).getFullYear()}
+          </MemberSince>
           <Rating>
             <Star size={16} style={{ marginRight: '5px' }} />
-            {user.rating || '4.8'} ({user.ratingCount || '120'})
+            {profileData.profile?.rating || '4.8'} ({profileData.profile?.rating_count || '120'})
           </Rating>
         </ProfileInfo>
       </ProfileHeader>
@@ -251,26 +273,26 @@ const UserProfile = ({ onUserDataFetched }) => {
         <DetailItem>
           <DetailIcon><UserCircle size={16} /></DetailIcon>
           <DetailLabel>Role</DetailLabel>
-          <DetailValue>{user.role}</DetailValue>
+          <DetailValue>{profileData.role || 'Member'}</DetailValue>
         </DetailItem>
         <DetailItem>
           <DetailIcon><Shield size={16} /></DetailIcon>
           <DetailLabel>Credit Score</DetailLabel>
-          <DetailValue>{user.creditScore ? user.creditScore.score : 'N/A'}</DetailValue>
+          <DetailValue>{profileData.profile?.credit_score || 'N/A'}</DetailValue>
         </DetailItem>
         <DetailItem>
           <DetailIcon><TrendingUp size={16} /></DetailIcon>
           <DetailLabel>Invested</DetailLabel>
-          <DetailValue>KES {user.totalInvested || '0'}</DetailValue>
+          <DetailValue>KES {profileData.profile?.total_invested?.toLocaleString() || '0'}</DetailValue>
         </DetailItem>
         <DetailItem>
           <DetailIcon><AlertCircle size={16} /></DetailIcon>
           <DetailLabel>Borrowed</DetailLabel>
-          <DetailValue>KES {user.totalBorrowed || '0'}</DetailValue>
+          <DetailValue>KES {profileData.profile?.total_borrowed?.toLocaleString() || '0'}</DetailValue>
         </DetailItem>
       </ProfileDetails>
       <CreditScoreBar>
-        <CreditScoreFill score={user.creditScore ? user.creditScore.score : 0} />
+        <CreditScoreFill score={profileData.profile?.credit_score || 0} />
       </CreditScoreBar>
     </ProfileContainer>
   );

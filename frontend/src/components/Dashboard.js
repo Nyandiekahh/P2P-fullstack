@@ -10,7 +10,7 @@ import UserProfile from './UserProfile';
 import QuickStats from './QuickStats';
 import Notifications from './Notifications';
 import LoanActivity from './LoanActivity';
-import LoanListings from './LoanListings';
+import LoanMarketplace from './LoanMarketplace';
 import VideoTutorial from './VideoTutorial';
 import TransactionHistory from './TransactionHistory';
 import CurrencyConverter from './CurrencyConverter';
@@ -91,8 +91,28 @@ const VideoTutorialSection = styled(Section)`
   grid-column: span 6;
 `;
 
-const LoanListingsSection = styled(Section)`
+const LoanMarketplaceSection = styled(Section)`
   grid-column: span 8;
+  max-height: 800px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
 `;
 
 const TransactionHistorySection = styled(Section)`
@@ -147,8 +167,13 @@ const Dashboard = () => {
     setUserPhoneNumber(phoneNumber);
   };
 
-  const handleRefresh = () => {
-    console.log('Refreshing dashboard data...');
+  const handleRefresh = async () => {
+    try {
+      console.log('Refreshing dashboard data...');
+      // Add your refresh logic here
+    } catch (error) {
+      console.error('Error refreshing dashboard:', error);
+    }
   };
 
   const toggleHelp = () => {
@@ -226,14 +251,14 @@ const Dashboard = () => {
         <VideoTutorial videoSrc="/p2p.mp4" />
       </VideoTutorialSection>
 
-      <LoanListingsSection
-        className="loan-listings"
+      <LoanMarketplaceSection
+        className="loan-marketplace"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.6 }}
       >
-        <LoanListings />
-      </LoanListingsSection>
+        <LoanMarketplace />
+      </LoanMarketplaceSection>
 
       <TransactionHistorySection
         className="transaction-history"
@@ -269,10 +294,6 @@ const Dashboard = () => {
       >
         <HelpCircle size={24} />
       </HelpButton>
-
-      {/* {showHelp && (
-        <HelpOverlay onClose={toggleHelp} />
-      )} */}
     </DashboardContainer>
   );
 };
