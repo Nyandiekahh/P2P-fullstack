@@ -1,34 +1,38 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  DollarSign, 
-  Calendar, 
-  Percent, 
-  Shield, 
-  User, 
-  AlertCircle,
-  Search,
-  SortAsc,
-  ArrowRight,
-  XCircle,
-  CheckCircle,
-  Info,
-  CreditCard,
-  FileText,
-  Download,
-  Clock,
-  TrendingUp,
-  Filter,
-  X,
-  ChevronRight,
-  ChevronDown,
-  Eye,
-  ExternalLink,
-  AlertTriangle
+  DollarSign, Calendar, Percent, Shield, User, AlertCircle,
+  Search, Eye, CheckCircle, Info, FileText, Download, 
+  TrendingUp, X, AlertTriangle
 } from 'lucide-react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Base button styles for reuse
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+const ENDPOINTS = {
+    LOANS: '/loans/',  // For both fetching and creating loans
+    INVESTMENTS: (id) => `/loans/${id}/invest/`,  // Function to generate URL
+    DOCUMENTS: (id) => `/loans/${id}/documents/`  // Function to generate URL
+};
+
 const baseButtonStyles = `
   display: flex;
   align-items: center;
@@ -43,7 +47,6 @@ const baseButtonStyles = `
   padding: 8px 16px;
 `;
 
-// Core styled components
 const MarketplaceContainer = styled(motion.div)`
   display: flex;
   flex-direction: column;
@@ -174,7 +177,6 @@ const SortSelect = styled.select`
   }
 `;
 
-// Grid and Card Components
 const LoanGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -270,8 +272,6 @@ const DetailValue = styled.span`
   font-size: 0.9rem;
 `;
 
-
-// Progress Bar Components
 const ProgressBar = styled.div`
   width: 100%;
   height: 6px;
@@ -315,7 +315,6 @@ const ActionButton = styled(motion.button)`
   }
 `;
 
-// Modal Components
 const ModalOverlay = styled(motion.div)`
   position: fixed;
   top: 0;
@@ -393,7 +392,6 @@ const ModalBody = styled.div`
   padding: 24px;
 `;
 
-// Investment Flow Components
 const InvestmentSteps = styled.div`
   display: flex;
   justify-content: space-between;
@@ -443,7 +441,6 @@ const StepLabel = styled.span`
   font-weight: ${props => props.active ? '500' : 'normal'};
 `;
 
-// Form Components
 const Form = styled.form`
   display: flex;
   flex-direction: column;
@@ -502,6 +499,8 @@ const InfoBox = styled.div`
         return '#fff3e0';
       case 'success':
         return '#e8f5e9';
+      case 'error':
+        return '#ffebee';
       default:
         return '#e3f2fd';
     }
@@ -569,189 +568,201 @@ const DocumentBox = styled.div`
   }
 `;
 
-// Main Component
-const LoanMarketplace = () => {
-  // State Management
-  const [loans, setLoans] = useState([
-    {
-      id: 1,
-      amount: 50000,
-      status: 'Available',
-      interestRate: 12,
-      duration: 12,
-      creditScore: 750,
-      borrower: 'John D.',
-      progress: 0,
-      purpose: 'Business Expansion',
-      dateCreated: '2024-01-15',
-      documents: ['business_plan.pdf', 'financial_statement.pdf'],
-      riskLevel: 'Low',
-      monthlyPayment: 4650,
-      totalReturn: 55800,
-      description: 'Expanding local retail business with new inventory and equipment.'
-    },
-    {
-      id: 2,
-      amount: 25000,
-      status: 'Funding',
-      interestRate: 15,
-      duration: 6,
-      creditScore: 720,
-      borrower: 'Sarah M.',
-      progress: 65,
-      purpose: 'Education',
-      dateCreated: '2024-01-20',
-      documents: ['admission_letter.pdf', 'cost_breakdown.pdf'],
-      riskLevel: 'Medium',
-      monthlyPayment: 4375,
-      totalReturn: 26250,
-      description: 'Master\'s degree program in Business Administration.'
-    },
-    // Add more sample loans as needed
-  ]);
+const LoadingSpinner = styled(motion.div)`
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #4CAF50;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  margin: 40px auto;
+`;
 
+const LoanMarketplace = () => {
+  const [loans, setLoans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [sortOption, setSortOption] = useState('dateCreated');
   const [sortDirection, setSortDirection] = useState('desc');
   
-  // Modal States
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
   const [investmentStep, setInvestmentStep] = useState(1);
 
-  // Form States
   const [loanApplication, setLoanApplication] = useState({
+    loan_type: '',
     amount: '',
     duration: '',
-    interestRate: '',
+    interest_rate: '',
     purpose: '',
     description: ''
   });
 
   const [investmentForm, setInvestmentForm] = useState({
     amount: '',
-    paymentMethod: '',
-    agreedToTerms: false
+    payment_method: '',
+    agreed_to_terms: false
   });
 
-  // Filtering and Sorting Logic
-  const filteredAndSortedLoans = useMemo(() => {
-    return loans
-      .filter(loan => {
-        // Filter by search term
-        const searchMatch = loan.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          loan.borrower.toLowerCase().includes(searchTerm.toLowerCase());
-
-        // Filter by status
-        const statusMatch = activeFilter === 'all' || 
-          loan.status.toLowerCase() === activeFilter.toLowerCase();
-
-        return searchMatch && statusMatch;
-      })
-      .sort((a, b) => {
-        let comparison = 0;
-        
-        switch (sortOption) {
-          case 'amount':
-            comparison = a.amount - b.amount;
-            break;
-          case 'interestRate':
-            comparison = a.interestRate - b.interestRate;
-            break;
-          case 'duration':
-            comparison = a.duration - b.duration;
-            break;
-          case 'creditScore':
-            comparison = a.creditScore - b.creditScore;
-            break;
-          case 'dateCreated':
-            comparison = new Date(a.dateCreated) - new Date(b.dateCreated);
-            break;
-          default:
-            comparison = 0;
-        }
-
-        return sortDirection === 'desc' ? -comparison : comparison;
+  // For fetching loans
+const fetchLoans = async () => {
+  try {
+      setLoading(true);
+      const response = await api.get(ENDPOINTS.LOANS, {
+          params: {
+              search: searchTerm,
+              status: activeFilter !== 'all' ? activeFilter : undefined,
+              sort: sortOption,
+              direction: sortDirection
+          }
       });
-  }, [loans, searchTerm, activeFilter, sortOption, sortDirection]);
+      setLoans(response.data.results || response.data);
+  } catch (err) {
+      setError('Failed to fetch loans. Please try again later.');
+      toast.error(err.response?.data?.message || 'Error loading loans');
+    } finally {
+      setLoading(false);
+    }
+};
 
-  // Handler Functions
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-  };
+  useEffect(() => {
+    fetchLoans();
+  }, [searchTerm, activeFilter, sortOption, sortDirection]);
 
-  const handleFilterChange = (filter) => {
-    setActiveFilter(filter);
-  };
-
-  const handleSortChange = (e) => {
-    const [option, direction] = e.target.value.split('-');
-    setSortOption(option);
-    setSortDirection(direction);
-  };
-
-  const handleLoanClick = (loan) => {
-    setSelectedLoan(loan);
-    setShowDetailModal(true);
-  };
-
-  const handleInvestClick = (loan) => {
-    setSelectedLoan(loan);
-    setInvestmentStep(1);
-    setShowInvestModal(true);
-  };
-
-  const handleApplySubmit = async (e) => {
+  const handleLoanApplication = async (e) => {
     e.preventDefault();
     try {
-      // API call to submit loan application
-      console.log('Submitting loan application:', loanApplication);
-      // Add your API logic here
-      
-      setShowApplyModal(false);
-      // Show success message or handle response
-    } catch (error) {
-      console.error('Error submitting loan application:', error);
-      // Handle error
-    }
-  };
-
-  const handleInvestmentSubmit = async (e) => {
-    e.preventDefault();
-    if (investmentStep < 3) {
-      setInvestmentStep(prev => prev + 1);
-    } else {
-      try {
-        // API call to submit investment
-        console.log('Submitting investment:', investmentForm);
-        // Add your API logic here
+        setLoading(true);
         
-        setShowInvestModal(false);
-        // Show success message or handle response
-      } catch (error) {
-        console.error('Error submitting investment:', error);
-        // Handle error
-      }
-    }
-  };
+        const formattedData = {
+            loan_type: parseInt(loanApplication.loan_type),
+            amount: parseFloat(loanApplication.amount),
+            term_months: parseInt(loanApplication.duration),
+            interest_rate: parseFloat(loanApplication.interest_rate),
+            purpose: loanApplication.purpose,
+            description: loanApplication.description,
+            status: 'Available'  // Match exact database value
+        };
 
-  // Calculate loan statistics
+        console.log('Sending loan application:', formattedData);
+
+        const response = await api.post(ENDPOINTS.LOANS, formattedData);
+        toast.success('Loan application submitted successfully!');
+        setShowApplyModal(false);
+        fetchLoans();
+    } catch (err) {
+        console.error('Error creating loan:', err.response?.data);
+        toast.error(err.response?.data?.message || 'Failed to submit loan application');
+    } finally {
+        setLoading(false);
+    }
+};
+
+const handleInvestmentSubmit = async (e) => {
+  e.preventDefault();
+  if (investmentStep < 3) {
+    setInvestmentStep(prev => prev + 1);
+    return;
+  }
+
+  try {
+    setLoading(true);
+    
+    const investmentData = {
+      amount: parseFloat(investmentForm.amount),
+      payment_method: investmentForm.payment_method
+    };
+
+    const response = await api.post(
+      ENDPOINTS.INVESTMENTS(selectedLoan.id),
+      investmentData
+    );
+
+    // Handle different payment responses
+    if (response.data.payment_method === 'mpesa') {
+      toast.info('Please check your phone for M-Pesa prompt');
+    } else if (response.data.payment_method === 'bank') {
+      toast.info('Bank transfer details have been sent to your email');
+    } else if (response.data.payment_url) {
+      window.location.href = response.data.payment_url;
+    }
+
+    setShowInvestModal(false);
+    fetchLoans();
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Failed to process investment');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleDocumentDownload = async (documentId) => {
+  try {
+    const response = await api.get(
+      `${ENDPOINTS.DOCUMENTS(selectedLoan.id)}/${documentId}`,
+      { responseType: 'blob' }
+    );
+    
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `document-${documentId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (err) {
+    toast.error('Failed to download document');
+  }
+};
+
   const calculateStats = () => {
     const totalAvailable = loans.filter(loan => loan.status === 'Available').length;
     const totalFunding = loans.filter(loan => loan.status === 'Funding').length;
-    const averageInterestRate = loans.reduce((acc, loan) => acc + loan.interestRate, 0) / loans.length;
+    const averageInterestRate = loans.reduce((acc, loan) => acc + loan.interest_rate, 0) / loans.length;
     
     return {
       totalAvailable,
       totalFunding,
-      averageInterestRate
+      averageInterestRate: averageInterestRate || 0
     };
   };
 
   const stats = calculateStats();
+
+  const filteredAndSortedLoans = useMemo(() => {
+    if (!loans) return [];
+    
+    return loans.filter(loan => {
+      const searchMatch = loan.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        loan.borrower.toLowerCase().includes(searchTerm.toLowerCase());
+      const statusMatch = activeFilter === 'all' || 
+        loan.status.toLowerCase() === activeFilter.toLowerCase();
+      return searchMatch && statusMatch;
+    }).sort((a, b) => {
+      let comparison = 0;
+      switch (sortOption) {
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'interestRate':
+          comparison = a.interest_rate - b.interest_rate;
+          break;
+        case 'duration':
+          comparison = a.duration - b.duration;
+          break;
+        case 'dateCreated':
+          comparison = new Date(a.created_at) - new Date(b.created_at);
+          break;
+        default:
+          comparison = 0;
+      }
+      return sortDirection === 'desc' ? -comparison : comparison;
+    });
+  }, [loans, searchTerm, activeFilter, sortOption, sortDirection]);
 
   return (
     <MarketplaceContainer
@@ -759,6 +770,13 @@ const LoanMarketplace = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
+      {error && (
+        <InfoBox type="error">
+          <AlertCircle size={20} />
+          <InfoText>{error}</InfoText>
+        </InfoBox>
+      )}
+
       <Header>
         <HeaderLeft>
           <Title>Loan Marketplace</Title>
@@ -775,7 +793,7 @@ const LoanMarketplace = () => {
             <SearchInput
               placeholder="Search loans..."
               value={searchTerm}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </SearchContainer>
           <ApplyButton
@@ -790,49 +808,51 @@ const LoanMarketplace = () => {
       </Header>
 
       <FilterBar>
-        <FilterGroup>
-          <FilterButton
-            active={activeFilter === 'all'}
-            onClick={() => handleFilterChange('all')}
-          >
-            All Loans
-          </FilterButton>
-          <FilterButton
-            active={activeFilter === 'available'}
-            onClick={() => handleFilterChange('available')}
-          >
-            Available
-          </FilterButton>
-          <FilterButton
-            active={activeFilter === 'funding'}
-            onClick={() => handleFilterChange('funding')}
-          >
-            Funding
-          </FilterButton>
-          <FilterButton
-            active={activeFilter === 'funded'}
-            onClick={() => handleFilterChange('funded')}
-          >
-            Funded
-          </FilterButton>
-        </FilterGroup>
-        
-        <SortSelect onChange={handleSortChange}>
-          <option value="dateCreated-desc">Newest First</option>
-          <option value="dateCreated-asc">Oldest First</option>
-          <option value="amount-desc">Highest Amount</option>
-          <option value="amount-asc">Lowest Amount</option>
-          <option value="interestRate-desc">Highest Interest</option>
-          <option value="interestRate-asc">Lowest Interest</option>
-          <option value="duration-asc">Shortest Duration</option>
-          <option value="duration-desc">Longest Duration</option>
-        </SortSelect>
-      </FilterBar>
+    <FilterGroup>
+    <FilterButton
+    active={activeFilter === 'Available'}
+    onClick={() => setActiveFilter('Available')}
+>
+    Available
+</FilterButton>
+<FilterButton
+    active={activeFilter === 'Funding'}
+    onClick={() => setActiveFilter('Funding')}
+>
+    Funding
+</FilterButton>
+<FilterButton
+    active={activeFilter === 'Funded'}
+    onClick={() => setActiveFilter('Funded')}
+>
+    Funded
+</FilterButton>
+    </FilterGroup>
+    
+    <SortSelect onChange={(e) => {
+        const [option, direction] = e.target.value.split('-');
+        setSortOption(option);
+        setSortDirection(direction);
+    }}>
+        <option value="dateCreated-desc">Newest First</option>
+        <option value="dateCreated-asc">Oldest First</option>
+        <option value="amount-desc">Highest Amount</option>
+        <option value="amount-asc">Lowest Amount</option>
+        <option value="interestRate-desc">Highest Interest</option>
+        <option value="interestRate-asc">Lowest Interest</option>
+    </SortSelect>
+    </FilterBar>
 
-      <LoanGrid>
-        <AnimatePresence>
-          {filteredAndSortedLoans.map(loan => (
-            <LoanCard
+      {loading ? (
+        <LoadingSpinner
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
+      ) : (
+        <LoanGrid>
+          <AnimatePresence>
+            {filteredAndSortedLoans.map(loan => (
+              <LoanCard
               key={loan.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -840,82 +860,67 @@ const LoanMarketplace = () => {
               transition={{ duration: 0.3 }}
             >
               <CardHeader>
-                <LoanAmount>KES {loan.amount.toLocaleString()}</LoanAmount>
+                <LoanAmount>KES {parseFloat(loan.amount).toLocaleString()}</LoanAmount>
                 <StatusBadge status={loan.status}>{loan.status}</StatusBadge>
               </CardHeader>
-
+            
               <CardBody>
-                <LoanDetailGrid>
-                  <DetailItem>
-                    <Percent size={16} />
-                    <DetailLabel>Interest:</DetailLabel>
-                    <DetailValue>{loan.interestRate}%</DetailValue>
-                  </DetailItem>
-                  
-                  <DetailItem>
-                    <Calendar size={16} />
-                    <DetailLabel>Duration:</DetailLabel>
-                    <DetailValue>{loan.duration} months</DetailValue>
-                  </DetailItem>
-                  
-                  <DetailItem>
-                    <Shield size={16} />
-                    <DetailLabel>Credit Score:</DetailLabel>
-                    <DetailValue>{loan.creditScore}</DetailValue>
-                  </DetailItem>
-                  
-                  <DetailItem>
-                    <TrendingUp size={16} />
-                    <DetailLabel>Risk Level:</DetailLabel>
-                    <DetailValue>{loan.riskLevel}</DetailValue>
-                  </DetailItem>
-                </LoanDetailGrid>
+              <LoanDetailGrid>
+    <DetailItem>
+        <Percent size={16} />
+        <DetailLabel>Interest:</DetailLabel>
+        <DetailValue>{loan.interest_rate}%</DetailValue>
+    </DetailItem>
+    
+    <DetailItem>
+        <Calendar size={16} />
+        <DetailLabel>Duration:</DetailLabel>
+        <DetailValue>{loan.term_months} months</DetailValue>
+    </DetailItem>
+    
+    <DetailItem>
+        <Shield size={16} />
+        <DetailLabel>Risk Level:</DetailLabel>
+        <DetailValue>{loan.risk_level}</DetailValue>
+    </DetailItem>
+    
+    <DetailItem>
+        <TrendingUp size={16} />
+        <DetailLabel>Progress:</DetailLabel>
+        <DetailValue>{loan.progress}%</DetailValue>
+    </DetailItem>
+</LoanDetailGrid>
 
+<DetailItem>
+    <User size={16} />
+    <DetailLabel>Purpose:</DetailLabel>
+    <DetailValue>{loan.purpose}</DetailValue>
+</DetailItem>
+            
                 <DetailItem>
                   <User size={16} />
                   <DetailLabel>Borrower:</DetailLabel>
-                  <DetailValue>{loan.borrower}</DetailValue>
+                  <DetailValue>{loan.user?.username || 'Anonymous'}</DetailValue>
                 </DetailItem>
-
+            
                 {loan.status === 'Funding' && (
                   <>
                     <ProgressBar>
-                      <ProgressFill progress={loan.progress} />
+                      <ProgressFill progress={loan.progress || 0} />
                     </ProgressBar>
                     <DetailValue style={{ textAlign: 'right', fontSize: '0.8rem' }}>
-                      {loan.progress}% Funded
+                      {loan.progress || 0}% Funded
                     </DetailValue>
                   </>
                 )}
-
-                <CardActions>
-                  <ActionButton
-                    onClick={() => handleLoanClick(loan)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Eye size={16} />
-                    View Details
-                  </ActionButton>
-                  
-                  <ActionButton
-                    primary
-                    onClick={() => handleInvestClick(loan)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    disabled={loan.status === 'Funded'}
-                  >
-                    <DollarSign size={16} />
-                    {loan.status === 'Funded' ? 'Fully Funded' : 'Invest Now'}
-                  </ActionButton>
-                </CardActions>
+                ...
               </CardBody>
             </LoanCard>
-          ))}
-        </AnimatePresence>
-      </LoanGrid>
-
-      {/* Loan Application Modal */}
+            ))}
+          </AnimatePresence>
+        </LoanGrid>
+      )}
+      
       <AnimatePresence>
         {showApplyModal && (
           <ModalOverlay
@@ -937,7 +942,7 @@ const LoanMarketplace = () => {
               </ModalHeader>
 
               <ModalBody>
-                <Form onSubmit={handleApplySubmit}>
+                <Form onSubmit={handleLoanApplication}>
                   <FormGroup>
                     <Label>Loan Amount (KES)</Label>
                     <Input
@@ -980,24 +985,24 @@ const LoanMarketplace = () => {
                       min="5"
                       max="25"
                       step="0.5"
-                      value={loanApplication.interestRate}
+                      value={loanApplication.interest_rate}
                       onChange={(e) => setLoanApplication({
                         ...loanApplication,
-                        interestRate: e.target.value
+                        interest_rate: e.target.value
                       })}
                     />
                   </FormGroup>
 
                   <FormGroup>
-                    <Label>Purpose</Label>
-                    <Select
-                      required
-                      value={loanApplication.purpose}
-                      onChange={(e) => setLoanApplication({
-                        ...loanApplication,
-                        purpose: e.target.value
-                      })}
-                    >
+    <Label>Loan Type</Label>
+    <Select
+        required
+        value={loanApplication.loan_type}
+        onChange={(e) => setLoanApplication({
+            ...loanApplication,
+            loan_type: e.target.value
+        })}
+    >
                       <option value="">Select purpose</option>
                       <option value="Business Expansion">Business Expansion</option>
                       <option value="Education">Education</option>
@@ -1023,21 +1028,14 @@ const LoanMarketplace = () => {
                     />
                   </FormGroup>
 
-                  <InfoBox type="info">
-                    <Info size={20} />
-                    <InfoText>
-                      <h4>Important Note</h4>
-                      <p>Your application will be reviewed by our team. Make sure all information is accurate and complete.</p>
-                    </InfoText>
-                  </InfoBox>
-
                   <ActionButton
                     type="submit"
                     primary
+                    disabled={loading}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    Submit Application
+                    {loading ? 'Submitting...' : 'Submit Application'}
                   </ActionButton>
                 </Form>
               </ModalBody>
@@ -1046,7 +1044,6 @@ const LoanMarketplace = () => {
         )}
       </AnimatePresence>
 
-      {/* Loan Details Modal */}
       <AnimatePresence>
         {showDetailModal && selectedLoan && (
           <ModalOverlay
@@ -1085,7 +1082,7 @@ const LoanMarketplace = () => {
                       <tbody>
                         <tr>
                           <th>Interest Rate</th>
-                          <td>{selectedLoan.interestRate}% per annum</td>
+                          <td>{selectedLoan.interest_rate}% per annum</td>
                         </tr>
                         <tr>
                           <th>Duration</th>
@@ -1093,17 +1090,17 @@ const LoanMarketplace = () => {
                         </tr>
                         <tr>
                           <th>Monthly Payment</th>
-                          <td>KES {selectedLoan.monthlyPayment.toLocaleString()}</td>
+                          <td>KES {selectedLoan.monthly_payment.toLocaleString()}</td>
                         </tr>
                         <tr>
                           <th>Total Return</th>
-                          <td>KES {selectedLoan.totalReturn.toLocaleString()}</td>
+                          <td>KES {selectedLoan.total_return.toLocaleString()}</td>
                         </tr>
                         <tr>
                           <th>Risk Level</th>
                           <td>
-                            <StatusBadge status={selectedLoan.riskLevel}>
-                              {selectedLoan.riskLevel}
+                            <StatusBadge status={selectedLoan.risk_level}>
+                              {selectedLoan.risk_level}
                             </StatusBadge>
                           </td>
                         </tr>
@@ -1120,23 +1117,23 @@ const LoanMarketplace = () => {
                       <tbody>
                         <tr>
                           <th>Credit Score</th>
-                          <td>{selectedLoan.creditScore}</td>
+                          <td>{selectedLoan.credit_score}</td>
                         </tr>
                         <tr>
                           <th>Date Listed</th>
-                          <td>{new Date(selectedLoan.dateCreated).toLocaleDateString()}</td>
+                          <td>{new Date(selectedLoan.created_at).toLocaleDateString()}</td>
                         </tr>
                       </tbody>
                     </Table>
 
                     <h4>Documents</h4>
-                    {selectedLoan.documents.map((doc, index) => (
-                      <DocumentBox key={index}>
+                    {selectedLoan.documents.map((doc) => (
+                      <DocumentBox key={doc.id} onClick={() => handleDocumentDownload(doc.id)}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <FileText size={20} />
-                          <span>{doc}</span>
+                          <span>{doc.name}</span>
                         </div>
-                        <Download size={20} style={{ cursor: 'pointer' }} />
+                        <Download size={20} />
                       </DocumentBox>
                     ))}
                   </div>
@@ -1147,7 +1144,8 @@ const LoanMarketplace = () => {
                     primary
                     onClick={() => {
                       setShowDetailModal(false);
-                      handleInvestClick(selectedLoan);
+                      setInvestmentStep(1);
+                      setShowInvestModal(true);
                     }}
                     style={{ marginTop: '24px' }}
                   >
@@ -1161,7 +1159,6 @@ const LoanMarketplace = () => {
         )}
       </AnimatePresence>
 
-      {/* Investment Modal */}
       <AnimatePresence>
         {showInvestModal && selectedLoan && (
           <ModalOverlay
@@ -1194,151 +1191,118 @@ const LoanMarketplace = () => {
                   ))}
                 </InvestmentSteps>
 
-                <Form onSubmit={handleInvestmentSubmit}>
-                  {investmentStep === 1 && (
-                    <>
-                      <InfoBox>
-                        <Info size={20} />
-                        <InfoText>
-                          <h4>Loan Overview</h4>
-                          <p>Amount: KES {selectedLoan.amount.toLocaleString()}</p>
-                          <p>Interest Rate: {selectedLoan.interestRate}%</p>
-                          <p>Duration: {selectedLoan.duration} months</p>
-                        </InfoText>
-                      </InfoBox>
+                <Form onSubmit={handleLoanApplication}>
+    <FormGroup>
+        <Label>Loan Type</Label>
+        <Select
+            required
+            value={loanApplication.loan_type}
+            onChange={(e) => setLoanApplication({
+                ...loanApplication,
+                loan_type: e.target.value
+            })}
+        >
+            <option value="">Select loan type</option>
+            <option value="1">Business Loan</option>
+            <option value="2">Personal Loan</option>
+            <option value="3">Education Loan</option>
+            {/* Add other loan types as needed */}
+        </Select>
+    </FormGroup>
 
-                      <FormGroup>
-                        <Label>Investment Amount (KES)</Label>
-                        <Input
-                          type="number"
-                          required
-                          min="1000"
-                          max={selectedLoan.amount}
-                          value={investmentForm.amount}
-                          onChange={(e) => setInvestmentForm({
-                            ...investmentForm,
-                            amount: e.target.value
-                          })}
-                        />
-                      </FormGroup>
+    <FormGroup>
+        <Label>Amount (KES)</Label>
+        <Input
+            type="number"
+            required
+            min="5000"
+            max="1000000"
+            value={loanApplication.amount}
+            onChange={(e) => setLoanApplication({
+                ...loanApplication,
+                amount: e.target.value
+            })}
+        />
+    </FormGroup>
 
-                      <Table>
-                        <tbody>
-                          <tr>
-                            <th>Expected Monthly Return</th>
-                            <td>
-                              KES {((investmentForm.amount * (selectedLoan.interestRate / 100)) / 12).toFixed(2)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th>Total Expected Return</th>
-                            <td>
-                              KES {(investmentForm.amount * (1 + (selectedLoan.interestRate / 100) * (selectedLoan.duration / 12))).toFixed(2)}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </Table>
-                    </>
-                  )}
+    <FormGroup>
+        <Label>Duration (months)</Label>
+        <Select
+            required
+            value={loanApplication.duration}
+            onChange={(e) => setLoanApplication({
+                ...loanApplication,
+                duration: e.target.value
+            })}
+        >
+            <option value="">Select duration</option>
+            <option value="3">3 months</option>
+            <option value="6">6 months</option>
+            <option value="12">12 months</option>
+            <option value="24">24 months</option>
+            <option value="36">36 months</option>
+        </Select>
+    </FormGroup>
 
-                  {investmentStep === 2 && (
-                    <>
-                      <InfoBox type="warning">
-                        <AlertTriangle size={20} />
-                        <InfoText>
-                          <h4>Review Your Investment</h4>
-                          <p>Please review all details carefully before proceeding to payment.</p>
-                        </InfoText>
-                      </InfoBox>
+    <FormGroup>
+        <Label>Interest Rate (%)</Label>
+        <Input
+            type="number"
+            required
+            step="0.1"
+            min="5"
+            max="25"
+            value={loanApplication.interest_rate}
+            onChange={(e) => setLoanApplication({
+                ...loanApplication,
+                interest_rate: e.target.value
+            })}
+        />
+    </FormGroup>
 
-                      <Table>
-                        <tbody>
-                          <tr>
-                            <th>Investment Amount</th>
-                            <td>KES {parseFloat(investmentForm.amount).toLocaleString()}</td>
-                          </tr>
-                          <tr>
-                            <th>Interest Rate</th>
-                            <td>{selectedLoan.interestRate}% per annum</td>
-                          </tr>
-                          <tr>
-                            <th>Investment Term</th>
-                            <td>{selectedLoan.duration} months</td>
-                          </tr>
-                          <tr>
-                            <th>Expected Total Return</th>
-                            <td>
-                              KES {(investmentForm.amount * (1 + (selectedLoan.interestRate / 100) * (selectedLoan.duration / 12))).toLocaleString()}
-                            </td>
-                          </tr>
-                        </tbody>
-                      </Table>
-                    </>
-                  )}
+    <FormGroup>
+        <Label>Purpose</Label>
+        <Select
+            required
+            value={loanApplication.purpose}
+            onChange={(e) => setLoanApplication({
+                ...loanApplication,
+                purpose: e.target.value
+            })}
+        >
+            <option value="">Select purpose</option>
+            <option value="Business Expansion">Business Expansion</option>
+            <option value="Education">Education</option>
+            <option value="Real Estate">Real Estate</option>
+            <option value="Personal">Personal</option>
+            <option value="Debt Consolidation">Debt Consolidation</option>
+            <option value="Emergency">Emergency</option>
+        </Select>
+    </FormGroup>
 
-                  {investmentStep === 3 && (
-                    <>
-                      <InfoBox type="success">
-                        <CheckCircle size={20} />
-                        <InfoText>
-                          <h4>Complete Your Investment</h4>
-                          <p>Choose your preferred payment method to complete the investment.</p>
-                        </InfoText>
-                      </InfoBox>
+    <FormGroup>
+        <Label>Description</Label>
+        <Input
+            as="textarea"
+            rows={4}
+            required
+            value={loanApplication.description}
+            onChange={(e) => setLoanApplication({
+                ...loanApplication,
+                description: e.target.value
+            })}
+            placeholder="Provide detailed information about your loan request..."
+        />
+    </FormGroup>
 
-                      <FormGroup>
-                        <Label>Payment Method</Label>
-                        <Select
-                          required
-                          value={investmentForm.paymentMethod}
-                          onChange={(e) => setInvestmentForm({
-                            ...investmentForm,
-                            paymentMethod: e.target.value
-                          })}
-                        >
-                          <option value="">Select payment method</option>
-                          <option value="mpesa">M-Pesa</option>
-                          <option value="bank">Bank Transfer</option>
-                          <option value="card">Credit/Debit Card</option>
-                        </Select>
-                      </FormGroup>
-
-                      {investmentForm.paymentMethod && (
-                        <InfoBox>
-                          <Info size={20} />
-                          <InfoText>
-                            <h4>Next Steps</h4>
-                            <p>
-                              {investmentForm.paymentMethod === 'mpesa' && 
-                                'You will receive an M-Pesa prompt to complete the payment.'}
-                              {investmentForm.paymentMethod === 'bank' && 
-                                'You will receive bank transfer details via email.'}
-                              {investmentForm.paymentMethod === 'card' && 
-                                'You will be redirected to secure payment gateway.'}
-                            </p>
-                          </InfoText>
-                        </InfoBox>
-                      )}
-                    </>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                    {investmentStep > 1 && (
-                      <ActionButton
-                        type="button"
-                        onClick={() => setInvestmentStep(prev => prev - 1)}
-                      >
-                        Back
-                      </ActionButton>
-                    )}
-                    <ActionButton
-                      primary
-                      type="submit"
-                    >
-                      {investmentStep === 3 ? 'Complete Investment' : 'Continue'}
-                    </ActionButton>
-                  </div>
-                </Form>
+    <ActionButton
+        type="submit"
+        primary
+        disabled={loading}
+    >
+        {loading ? 'Submitting...' : 'Submit Application'}
+    </ActionButton>
+</Form>
               </ModalBody>
             </ModalContent>
           </ModalOverlay>
