@@ -1,69 +1,59 @@
-import { useState, useEffect, useMemo } from 'react';
-import { fetchLoansAPI } from '../services/api';
-import { toast } from 'react-toastify';
+// hooks/useLoans.js
+import { useState, useEffect } from 'react';
 
 export const useLoans = (searchTerm, activeFilter, sortOption, sortDirection) => {
-    const [loans, setLoans] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [loans, setLoans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    const fetchLoans = async () => {
-        try {
-            setLoading(true);
-            const data = await fetchLoansAPI({
-                search: searchTerm,
-                status: activeFilter !== 'all' ? activeFilter : undefined,
-                sort: sortOption,
-                direction: sortDirection
-            });
-            setLoans(data);
-        } catch (err) {
-            setError('Failed to fetch loans. Please try again later.');
-            toast.error(err.response?.data?.message || 'Error loading loans');
-        } finally {
-            setLoading(false);
+  const fetchLoans = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+      const url = new URL(`${baseUrl}/api/loans/`);
+      
+      // Add query parameters
+      if (searchTerm) url.searchParams.append('search', searchTerm);
+      if (activeFilter !== 'all') url.searchParams.append('status', activeFilter);
+      url.searchParams.append('sort', sortOption);
+      url.searchParams.append('direction', sortDirection);
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Please log in to view loans');
         }
-    };
+        throw new Error('Failed to fetch loans');
+      }
 
-    useEffect(() => {
-        fetchLoans();
-    }, [searchTerm, activeFilter, sortOption, sortDirection]);
+      const data = await response.json();
+      setLoans(data);
+    } catch (err) {
+      console.error('Error fetching loans:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const filteredAndSortedLoans = useMemo(() => {
-        if (!loans) return [];
-        
-        return loans.filter(loan => {
-            const searchMatch = loan.purpose.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                loan.borrower.toLowerCase().includes(searchTerm.toLowerCase());
-            const statusMatch = activeFilter === 'all' || 
-                loan.status.toLowerCase() === activeFilter.toLowerCase();
-            return searchMatch && statusMatch;
-        }).sort((a, b) => {
-            let comparison = 0;
-            switch (sortOption) {
-                case 'amount':
-                    comparison = a.amount - b.amount;
-                    break;
-                case 'interestRate':
-                    comparison = a.interest_rate - b.interest_rate;
-                    break;
-                case 'duration':
-                    comparison = a.duration - b.duration;
-                    break;
-                case 'dateCreated':
-                    comparison = new Date(a.created_at) - new Date(b.created_at);
-                    break;
-                default:
-                    comparison = 0;
-            }
-            return sortDirection === 'desc' ? -comparison : comparison;
-        });
-    }, [loans, searchTerm, activeFilter, sortOption, sortDirection]);
+  useEffect(() => {
+    fetchLoans();
+  }, [searchTerm, activeFilter, sortOption, sortDirection]);
 
-    return {
-        loans: filteredAndSortedLoans,
-        loading,
-        error,
-        refetchLoans: fetchLoans
-    };
+  const refetchLoans = () => fetchLoans();
+
+  return { loans, loading, error, refetchLoans };
 };

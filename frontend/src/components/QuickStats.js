@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Users, Percent } from 'lucide-react';
-import './QuickStats.css';  // We'll create this CSS file next
+import './QuickStats.css';
 
 const QuickStats = () => {
   const [stats, setStats] = useState([]);
@@ -10,15 +10,23 @@ const QuickStats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        const token = localStorage.getItem('accessToken'); // Changed from 'token' to 'accessToken'
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
         const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
         const response = await fetch(`${API_URL}/api/dashboard/`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
 
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentication failed. Please log in again.');
+          }
           throw new Error('Failed to fetch stats');
         }
 
@@ -55,6 +63,7 @@ const QuickStats = () => {
           }
         ]);
       } catch (error) {
+        console.error('Error fetching stats:', error);
         setError(error.message);
       } finally {
         setLoading(false);
@@ -82,7 +91,11 @@ const QuickStats = () => {
     return (
       <div className="error-message">
         Error loading statistics: {error}
-        <p className="error-subtitle">Please make sure you are logged in and try refreshing the page.</p>
+        <p className="error-subtitle">
+          {error.includes('authentication') ? 
+            'Please log in to view your statistics.' : 
+            'Please try refreshing the page.'}
+        </p>
       </div>
     );
   }

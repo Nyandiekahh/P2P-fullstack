@@ -15,6 +15,7 @@ import TransactionHistory from './TransactionHistory';
 import CurrencyConverter from './CurrencyConverter';
 import EducationalResources from './EducationalResources';
 import TutorialComponent from './TutorialComponent';
+import Chatbot from './Chatbot';
 
 const DashboardContainer = styled(motion.div)`
   display: grid;
@@ -260,6 +261,11 @@ const Dashboard = () => {
       >
         <HelpCircle size={24} />
       </HelpButton>
+
+      <Chatbot 
+  isOpen={showHelp}
+  onClose={toggleHelp}
+/>
     </DashboardContainer>
   );
 };
