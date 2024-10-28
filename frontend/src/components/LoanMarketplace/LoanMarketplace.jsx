@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { useLoans } from './hooks/useLoans';
 import { calculateStats } from './utils/calculations';
 import Header from './components/Header';
@@ -18,6 +19,7 @@ import {
 } from './styles/components';
 
 const LoanMarketplace = () => {
+    // State Management
     const [searchTerm, setSearchTerm] = useState('');
     const [activeFilter, setActiveFilter] = useState('all');
     const [sortOption, setSortOption] = useState('dateCreated');
@@ -28,6 +30,7 @@ const LoanMarketplace = () => {
     const [showInvestModal, setShowInvestModal] = useState(false);
     const [selectedLoan, setSelectedLoan] = useState(null);
 
+    // Fetch Loans
     const { loans, loading, error, refetchLoans } = useLoans(
         searchTerm,
         activeFilter,
@@ -37,6 +40,7 @@ const LoanMarketplace = () => {
 
     const stats = calculateStats(loans);
 
+    // Handlers
     const handleSortChange = (option, direction) => {
         setSortOption(option);
         setSortDirection(direction);
@@ -56,6 +60,29 @@ const LoanMarketplace = () => {
         setShowApplyModal(false);
         setShowDetailModal(false);
         setShowInvestModal(false);
+        setSelectedLoan(null);
+    };
+
+    const handleInvestmentSuccess = async () => {
+        try {
+            await refetchLoans();
+            handleCloseModals();
+            toast.success('Investment updated successfully');
+        } catch (error) {
+            console.error('Error refreshing loans:', error);
+            toast.error('Please refresh the page to see updated loan status');
+        }
+    };
+
+    const handleApplySuccess = async () => {
+        try {
+            await refetchLoans();
+            handleCloseModals();
+            toast.success('Loan application submitted successfully');
+        } catch (error) {
+            console.error('Error refreshing loans:', error);
+            toast.error('Please refresh the page to see your new loan');
+        }
     };
 
     return (
@@ -64,6 +91,7 @@ const LoanMarketplace = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
         >
+            {/* Error Display */}
             {error && (
                 <InfoBox type="error">
                     <AlertCircle size={20} />
@@ -71,6 +99,7 @@ const LoanMarketplace = () => {
                 </InfoBox>
             )}
 
+            {/* Header Section */}
             <Header
                 stats={stats}
                 searchTerm={searchTerm}
@@ -78,12 +107,14 @@ const LoanMarketplace = () => {
                 onApplyClick={() => setShowApplyModal(true)}
             />
 
+            {/* Filter Bar */}
             <FilterBar
                 activeFilter={activeFilter}
                 onFilterChange={setActiveFilter}
                 onSortChange={handleSortChange}
             />
 
+            {/* Loans Grid */}
             {loading ? (
                 <LoadingSpinner
                     animate={{ rotate: 360 }}
@@ -104,19 +135,20 @@ const LoanMarketplace = () => {
                 </LoanGrid>
             )}
 
+            {/* Modals */}
             <AnimatePresence>
                 {showApplyModal && (
                     <ApplyModal
                         isOpen={showApplyModal}
-                        onClose={() => handleCloseModals()}
-                        onSuccess={refetchLoans}
+                        onClose={handleCloseModals}
+                        onSuccess={handleApplySuccess}
                     />
                 )}
 
                 {showDetailModal && selectedLoan && (
                     <DetailModal
                         isOpen={showDetailModal}
-                        onClose={() => handleCloseModals()}
+                        onClose={handleCloseModals}
                         loan={selectedLoan}
                         onInvestClick={() => {
                             setShowDetailModal(false);
@@ -128,9 +160,9 @@ const LoanMarketplace = () => {
                 {showInvestModal && selectedLoan && (
                     <InvestModal
                         isOpen={showInvestModal}
-                        onClose={() => handleCloseModals()}
+                        onClose={handleCloseModals}
                         loan={selectedLoan}
-                        onSuccess={refetchLoans}
+                        onSuccess={handleInvestmentSuccess}
                     />
                 )}
             </AnimatePresence>

@@ -1,176 +1,188 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { RefreshCw, ArrowRightCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const ConverterContainer = styled(motion.div)`
-  background-color: #ffffff;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-`;
-
-const Title = styled.h2`
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-  color: #333;
-`;
-
-const ConverterForm = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  margin-bottom: 20px;
-`;
-
-const InputGroup = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const Input = styled.input`
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 16px;
-`;
-
-const Select = styled.select`
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 16px;
-  background-color: #f0f4f8;
-`;
-
-const ConvertButton = styled(motion.button)`
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const Result = styled.div`
-  font-size: 18px;
-  font-weight: bold;
-  text-align: center;
-  margin-top: 20px;
-`;
-
-const ChartContainer = styled.div`
-  height: 300px;
-  margin-top: 30px;
-`;
-
-const ChartTitle = styled.h3`
-  margin-bottom: 15px;
-  color: #333;
-`;
-
-// Mock exchange rates (replace with real API data in production)
-const exchangeRates = {
-  USD: 1,
-  EUR: 0.84,
-  GBP: 0.72,
-  JPY: 110.14,
-  KES: 107.25,
-};
-
-// Mock historical data (replace with real API data in production)
-const historicalData = [
-  { date: '2023-01-01', rate: 105.50 },
-  { date: '2023-02-01', rate: 106.20 },
-  { date: '2023-03-01', rate: 106.80 },
-  { date: '2023-04-01', rate: 107.10 },
-  { date: '2023-05-01', rate: 107.25 },
-];
+import styles from './CurrencyConverter.module.css';
 
 const CurrencyConverter = () => {
   const [amount, setAmount] = useState('');
   const [fromCurrency, setFromCurrency] = useState('USD');
   const [toCurrency, setToCurrency] = useState('KES');
   const [result, setResult] = useState(null);
+  const [exchangeRates, setExchangeRates] = useState({});
+  const [currencies, setCurrencies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [historicalData, setHistoricalData] = useState([]);
 
-  const handleConvert = (e) => {
-    e.preventDefault();
-    const fromRate = exchangeRates[fromCurrency];
-    const toRate = exchangeRates[toCurrency];
-    const convertedAmount = (amount / fromRate) * toRate;
-    setResult(convertedAmount.toFixed(2));
-  };
+  const API_KEY = 'cace2c8b73a0381b3c2f6515';
+  const BASE_URL = 'https://v6.exchangerate-api.com/v6';
+
+  const generateHistoricalData = useCallback((rate) => {
+    const today = new Date();
+    const baseRate = rate || 110; // Default base rate for USD to KES
+    const variation = 0.05; // 5% variation
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setMonth(today.getMonth() - (6 - i));
+      // Create a more stable rate with small variations
+      const randomVariation = 1 + (Math.random() * variation * 2 - variation);
+      return {
+        date: date.toISOString().split('T')[0],
+        rate: (baseRate * randomVariation).toFixed(2)
+      };
+    });
+  }, []);
+
+  const fetchExchangeRates = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${BASE_URL}/${API_KEY}/latest/${fromCurrency}`);
+      const data = await response.json();
+      
+      if (data.result === 'error') {
+        throw new Error(data['error-type'] || 'Failed to fetch exchange rates');
+      }
+      
+      setExchangeRates(data.conversion_rates);
+      setCurrencies(Object.keys(data.conversion_rates));
+      
+      // Generate historical data based on the current rate
+      const currentRate = data.conversion_rates[toCurrency];
+      setHistoricalData(generateHistoricalData(currentRate));
+      
+      setError(null);
+      
+      // If amount is already entered, calculate conversion
+      if (amount && data.conversion_rates[toCurrency]) {
+        const convertedAmount = amount * data.conversion_rates[toCurrency];
+        setResult(convertedAmount.toFixed(2));
+      }
+    } catch (err) {
+      setError('Failed to fetch exchange rates. Please try again later.');
+      console.error('Error fetching exchange rates:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [fromCurrency, toCurrency, amount, generateHistoricalData]);
+
+  useEffect(() => {
+    fetchExchangeRates();
+  }, [fetchExchangeRates]);
+
+  // Auto-convert when amount changes
+  useEffect(() => {
+    if (amount && exchangeRates[toCurrency]) {
+      const convertedAmount = amount * exchangeRates[toCurrency];
+      setResult(convertedAmount.toFixed(2));
+    } else {
+      setResult(null);
+    }
+  }, [amount, toCurrency, exchangeRates]);
+
+  if (loading && !currencies.length) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loadingState}>
+          <RefreshCw className={`${styles.icon} ${styles.spin}`} />
+          <span>Loading exchange rates...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <ConverterContainer
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Title>
-        <RefreshCw size={24} style={{ marginRight: '10px' }} />
-        Currency Converter
-      </Title>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <RefreshCw 
+          className={`${styles.icon} ${loading ? styles.spin : ''}`}
+          onClick={() => fetchExchangeRates()}
+        />
+        <h2 className={styles.title}>Currency Converter</h2>
+      </div>
 
-      <ConverterForm onSubmit={handleConvert}>
-        <InputGroup>
-          <Input
+      {error && (
+        <div className={styles.error}>
+          {error}
+        </div>
+      )}
+
+      <div className={styles.form}>
+        <div className={styles.inputGroup}>
+          <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="Enter amount"
-            required
+            className={styles.input}
           />
-          <Select value={fromCurrency} onChange={(e) => setFromCurrency(e.target.value)}>
-            {Object.keys(exchangeRates).map((currency) => (
-              <option key={currency} value={currency}>{currency}</option>
-            ))}
-          </Select>
-        </InputGroup>
-        <InputGroup>
-          <ArrowRightCircle size={24} />
-          <Select value={toCurrency} onChange={(e) => setToCurrency(e.target.value)}>
-            {Object.keys(exchangeRates).map((currency) => (
-              <option key={currency} value={currency}>{currency}</option>
-            ))}
-          </Select>
-        </InputGroup>
-        <ConvertButton
-          type="submit"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Convert
-        </ConvertButton>
-      </ConverterForm>
+          
+          <div className={styles.selectGroup}>
+            <select
+              value={fromCurrency}
+              onChange={(e) => setFromCurrency(e.target.value)}
+              className={styles.select}
+            >
+              {currencies.map((currency) => (
+                <option key={currency} value={currency}>{currency}</option>
+              ))}
+            </select>
+
+            <select
+              value={toCurrency}
+              onChange={(e) => setToCurrency(e.target.value)}
+              className={styles.select}
+            >
+              {currencies.map((currency) => (
+                <option key={currency} value={currency}>{currency}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
 
       {result && (
-        <Result>
-          {amount} {fromCurrency} = {result} {toCurrency}
-        </Result>
+        <div className={styles.result}>
+          <span className={styles.resultText}>
+            {amount} {fromCurrency} = {result} {toCurrency}
+          </span>
+        </div>
       )}
 
-      <ChartContainer>
-        <ChartTitle>Historical Exchange Rate: USD to KES</ChartTitle>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={historicalData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="rate" stroke="#8884d8" activeDot={{ r: 8 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </ChartContainer>
-    </ConverterContainer>
+      <div className={styles.chartSection}>
+        <h3 className={styles.chartTitle}>
+          Historical Exchange Rate: {fromCurrency} to {toCurrency}
+        </h3>
+        <div className={styles.chart}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={historicalData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fontSize: 10 }} 
+                stroke="#888"
+              />
+              <YAxis 
+                domain={['auto', 'auto']}
+                tick={{ fontSize: 10 }} 
+                stroke="#888"
+              />
+              <Tooltip 
+                contentStyle={{ fontSize: '12px' }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="rate" 
+                stroke="#3b82f6" 
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }} 
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
   );
 };
 
