@@ -1,92 +1,116 @@
-import React from 'react';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Users, Percent } from 'lucide-react';
-
-const StatsContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-`;
-
-const StatCard = styled(motion.div)`
-  background-color: #ffffff;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-`;
-
-const StatIcon = styled.div`
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background-color: ${props => props.color};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 15px;
-`;
-
-const StatLabel = styled.h3`
-  font-size: 16px;
-  color: #666;
-  margin: 0 0 5px 0;
-`;
-
-const StatValue = styled.p`
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
-  margin: 0;
-`;
-
-const StatChange = styled.span`
-  font-size: 14px;
-  color: ${props => props.positive ? '#4CAF50' : '#F44336'};
-  display: flex;
-  align-items: center;
-  margin-top: 5px;
-`;
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 }
-};
+import './QuickStats.css';  // We'll create this CSS file next
 
 const QuickStats = () => {
-  const stats = [
-    { label: 'Total Invested', value: 'KES 500,000', icon: DollarSign, color: '#4CAF50', change: '+5.2%' },
-    { label: 'Total Borrowed', value: 'KES 200,000', icon: TrendingUp, color: '#2196F3', change: '-2.1%' },
-    { label: 'Active Investments', value: '12', icon: Users, color: '#FFA000', change: '+1' },
-    { label: 'Avg. Return Rate', value: '9.5%', icon: Percent, color: '#9C27B0', change: '+0.3%' }
-  ];
+  const [stats, setStats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_URL}/api/dashboard/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch stats');
+        }
+
+        const data = await response.json();
+        
+        setStats([
+          { 
+            label: 'Total Invested', 
+            value: data.total_invested.value, 
+            icon: DollarSign, 
+            color: '#4CAF50', 
+            change: data.total_invested.change 
+          },
+          { 
+            label: 'Total Borrowed', 
+            value: data.total_borrowed.value, 
+            icon: TrendingUp, 
+            color: '#2196F3', 
+            change: data.total_borrowed.change 
+          },
+          { 
+            label: 'Active Investments', 
+            value: data.active_investments.value, 
+            icon: Users, 
+            color: '#FFA000', 
+            change: data.active_investments.change 
+          },
+          { 
+            label: 'Avg. Return Rate', 
+            value: data.avg_return_rate.value, 
+            icon: Percent, 
+            color: '#9C27B0', 
+            change: data.avg_return_rate.change 
+          }
+        ]);
+      } catch (error) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="stats-grid">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="stat-card skeleton">
+            <div className="skeleton-circle"></div>
+            <div className="skeleton-line"></div>
+            <div className="skeleton-line"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-message">
+        Error loading statistics: {error}
+        <p className="error-subtitle">Please make sure you are logged in and try refreshing the page.</p>
+      </div>
+    );
+  }
 
   return (
-    <StatsContainer>
+    <div className="stats-grid">
       {stats.map((stat, index) => (
-        <StatCard
-          key={index}
-          variants={cardVariants}
-          initial="hidden"
-          animate="visible"
-          transition={{ duration: 0.3, delay: index * 0.1 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <StatIcon color={stat.color}>
-            <stat.icon size={24} color="#ffffff" />
-          </StatIcon>
-          <StatLabel>{stat.label}</StatLabel>
-          <StatValue>{stat.value}</StatValue>
-          <StatChange positive={stat.change.startsWith('+')}>
-            {stat.change.startsWith('+') ? '▲' : '▼'} {stat.change}
-          </StatChange>
-        </StatCard>
+        <div key={index} className="stat-card">
+          <div 
+            className="stat-icon"
+            style={{ backgroundColor: `${stat.color}20` }}
+          >
+            <stat.icon 
+              size={24}
+              style={{ color: stat.color }}
+            />
+          </div>
+          
+          <div className="stat-content">
+            <p className="stat-label">{stat.label}</p>
+            <p className="stat-value">{stat.value}</p>
+            <p className={`stat-change ${stat.change.startsWith('+') ? 'positive' : 'negative'}`}>
+              {stat.change.startsWith('+') ? '↑' : '↓'} {stat.change}
+            </p>
+          </div>
+        </div>
       ))}
-    </StatsContainer>
+    </div>
   );
 };
 

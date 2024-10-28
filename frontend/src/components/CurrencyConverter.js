@@ -14,7 +14,7 @@ const CurrencyConverter = () => {
   const [error, setError] = useState(null);
   const [historicalData, setHistoricalData] = useState([]);
 
-  const API_KEY = 'cace2c8b73a0381b3c2f6515';
+  const API_KEY = 'be19c5e01da92fc90d18cfda';
   const BASE_URL = 'https://v6.exchangerate-api.com/v6';
 
   const generateHistoricalData = useCallback((rate) => {

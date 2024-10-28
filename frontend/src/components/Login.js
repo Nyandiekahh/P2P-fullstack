@@ -38,8 +38,9 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Store the token in localStorage
-        localStorage.setItem('token', data.tokens.access);
+        // Store tokens with consistent keys
+        localStorage.setItem('accessToken', data.tokens.access);
+        localStorage.setItem('refreshToken', data.tokens.refresh);
         
         // If using the context
         if (login) {
@@ -60,7 +61,7 @@ const Login = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+};
 
   return (
     <div className="login-container">
