@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, User, Settings, LogOut, ChevronLeft, ChevronRight, DollarSign, Users, Briefcase } from 'lucide-react';
+import { Home, User, Settings, LogOut, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
 
 const SidebarContainer = styled(motion.div)`
   position: fixed;
@@ -102,14 +102,19 @@ const sidebarVariants = {
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
 
   const handleLogout = () => {
-    console.log('Logging out...');
-    // Add actual logout functionality
+    // You can add any cleanup logic here before redirecting
+    // For example, clearing local storage, cookies, or state
+    localStorage.clear(); // Optional: Clear any stored user data
+    
+    // Redirect to the specified URL
+    window.location.href = 'https://jengafunds.vercel.app/';
   };
 
   return (
